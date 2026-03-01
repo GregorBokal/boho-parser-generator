@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["boho*"]
+
+[project]
+name = "boho"
+version = "0.1.0"
+description = "A self-hosting parser generator with a modal lexer and LR(1) parser"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [{ name = "Gregor Bokal", email = "gregor.bokal@gimb.org" }]
+dependencies = ["greenery>=4.2"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Compilers",
+    "Topic :: Text Processing :: General",
+]
+
+[project.urls]
+Homepage = "https://github.com/tvoj-username/boho"
