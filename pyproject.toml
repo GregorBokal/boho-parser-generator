@@ -21,4 +21,4 @@ classifiers = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/tvoj-username/boho"
+Homepage = "https://github.com/GregorBokal/boho-parser-generator?tab=readme-ov-file"
