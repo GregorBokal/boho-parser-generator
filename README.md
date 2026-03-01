@@ -1,6 +1,10 @@
 # Boho
 
-A self-hosting parser generator for Python. Define your grammar in a concise EBNF-based metalanguage and Boho will generate a modal lexer (DFA-based) and an LR(1) parser that produce a clean syntax tree.
+[![PyPI version](https://img.shields.io/pypi/v/boho)](https://pypi.org/project/boho/)
+[![Python](https://img.shields.io/pypi/pyversions/boho)](https://pypi.org/project/boho/)
+
+A self-hosting parser generator for Python. Define your grammar in a concise EBNF-based metalanguage and Boho will
+generate a modal lexer (DFA-based) and an LR(1) parser that produce a clean syntax tree.
 
 ## Installation
 
@@ -65,6 +69,7 @@ class Calc(Interpreter):
             result *= int(self(tree[i]))
         return result
 
+
 calc = Calc()
 print(calc(tree))  # 14
 ```
@@ -111,7 +116,8 @@ expr: term "+" term -> addition
 
 ### Fake terminals
 
-A name like `COMMENT_` (uppercase ending with `_`) defines a fake terminal -- described like a nonterminal but collapsed into a single token. Useful for structures that regular expressions cannot describe (e.g. nested block comments).
+A name like `COMMENT_` (uppercase ending with `_`) defines a fake terminal -- described like a nonterminal but collapsed
+into a single token. Useful for structures that regular expressions cannot describe (e.g. nested block comments).
 
 ### Lexer modes
 
@@ -196,7 +202,8 @@ Parse input text. Returns a `Tree` with `Token` leaves. Set `log=True` for step-
 
 ### `Interpreter`
 
-Base class for tree walkers. Subclass it and define methods named after your nonterminals. The default behavior for unhandled nodes: tokens return their value, trees return a list of children's results.
+Base class for tree walkers. Subclass it and define methods named after your nonterminals. The default behavior for
+unhandled nodes: tokens return their value, trees return a list of children's results.
 
 ## Dependencies
 
