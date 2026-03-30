@@ -7,7 +7,7 @@ include = ["boho*"]
 
 [project]
 name = "boho"
-version = "0.1.0"
+version = "0.1.1"
 description = "A self-hosting parser generator with a modal lexer and LR(1) parser"
 readme = "README.md"
 license = "MIT"
