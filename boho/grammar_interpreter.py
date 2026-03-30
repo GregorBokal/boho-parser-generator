@@ -93,9 +93,9 @@ class GrammarInterpreter(Interpreter):
 
     def option(self, tree):
         units = self(tree[0])
-        if len(tree) > 2:
+        if len(tree) > 1:
             alias = self(tree[1])
-            self.grammar[alias] = units
+            self.grammar[alias] = [tuple(units)]
             return (alias,)
         return tuple(units)
 

@@ -3,7 +3,7 @@ from boho import Boho
 grammar = '''
 start: a+
 
-a: b* c
+a: b* c -> d
 
 b: "b"
 c: "c"
