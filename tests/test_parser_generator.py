@@ -507,13 +507,15 @@ class TestFirst:
     def test_first_of_nonterminal(self, generator, arithmetic_grammar):
         generator.grammar = dict(arithmetic_grammar)
         generator.grammar[START] = [('start',)]
+        generator.compute_first_sets()
         result = generator.first(('atom',))
         assert '@INT' in result
 
     def test_first_of_epsilon_nonterminal(self, generator, epsilon_grammar):
         generator.grammar = dict(epsilon_grammar)
         generator.grammar[START] = [('start',)]
-        result = generator.first_of_nonterminal('maybe')
+        generator.compute_first_sets()
+        result = generator.first(('maybe',))
         assert 'B' in result
         assert '' in result
 
@@ -525,6 +527,7 @@ class TestFirst:
             START: [('start',)]
         }
         generator.grammar = grammar
+        generator.compute_first_sets()
         result = generator.first(('A', 'B'))
         assert 'X' in result
 

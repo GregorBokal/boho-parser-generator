@@ -299,7 +299,7 @@ class TestErrors:
             }
         }
         lexer = Lexer(instructions)
-        with pytest.raises(KeyError, match='Unknown current_mode'):
+        with pytest.raises(KeyError, match='Unknown mode'):
             lexer('aa')  # pushes 'nonexistent', then fails
 
 
