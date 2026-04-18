@@ -94,7 +94,12 @@ def generate(modes: Input, log=False) -> Output:
                                     print(f'    There is a conflict with {both}!')
                                 if isinstance(new, str):
                                     if isinstance(old, str):
-                                        if usages[old] == 1:
+                                        if (name := dictionary.get((old, new))) is not None:
+                                            state[str(both)] = name
+                                            if log:
+                                                print(f'    But it should have already been resolved '
+                                                      f'in state \033[1;33m*{name}*\033[0m.')
+                                        elif usages[old] == 1:
                                             queue.append((old, new))
                                             state[str(both)] = old
                                             dictionary[(old, new)] = old
@@ -106,28 +111,24 @@ def generate(modes: Input, log=False) -> Output:
                                                       f'is not used in any other case) to '
                                                       f'resolve this conflict there.')
                                         else:
-                                            if (name := dictionary.get((old, new))) is None:
-                                                while str(n) in states:
-                                                    n += 1
-                                                name = str(n)
-                                                states[name] = states[old]
-                                                for v in states[name].values():
-                                                    if isinstance(v, str):
-                                                        usages[v] += 1
-                                                queue.append((name, new))
-                                                usages[old] -= 1
-                                                usages[name] = 1
-                                                dictionary[(old, new)] = name
-                                                if log:
-                                                    print('    Fortunately, '
-                                                          'neither action is final, '
-                                                          'so let\'s create a new state '
-                                                          f'\033[1;33m*{name}*\033[0m, where '
-                                                          f'this conflict can be resolved.')
-                                            elif log:
-                                                print(f'    But it should have already been resolved '
-                                                      f'in state \033[1;33m*{name}*\033[0m.')
+                                            while str(n) in states:
+                                                n += 1
+                                            name = str(n)
+                                            states[name] = states[old]
+                                            for v in states[name].values():
+                                                if isinstance(v, str):
+                                                    usages[v] += 1
+                                            queue.append((name, new))
+                                            usages[old] -= 1
+                                            usages[name] = 1
+                                            dictionary[(old, new)] = name
                                             state[str(both)] = name
+                                            if log:
+                                                print('    Fortunately, '
+                                                      'neither action is final, '
+                                                      'so let\'s create a new state '
+                                                      f'\033[1;33m*{name}*\033[0m, where '
+                                                      f'this conflict can be resolved.')
                                     elif isinstance(old, list):  # error
                                         for values in list(dfa[current].values())[::-1]:
                                             for value in values:
