@@ -137,8 +137,12 @@ def generate(modes: Input, log=False) -> Output:
                                                         f'Tokens {old[0]} and {value[0]} are inseparable.')
                                         raise SyntaxError(f'Terminal {old[0]} is inseparable from some other token.')
                                 elif isinstance(old, list):
-                                    if old != new:
-                                        raise SyntaxError(f'Tokens {old[0]} and {new[0]} are inseparable.')
+                                    if log and old != new:
+                                        print(f'    Tokens {old[0]} and '
+                                              f'{new[0]} are inseparable, '
+                                              f'but {old[0]} wins, because it'
+                                              f'is declared first.')
+                                    state[str(both)] = old
                                 else:  # error
                                     seen = set()
                                     error_queue = [old]

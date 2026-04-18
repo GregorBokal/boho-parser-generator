@@ -25,6 +25,17 @@ For each lexical mode, you must provide a list of
     - A **regular expression** enclosed in forward slashes, e.g. `'/A[BC]/'`.
     - The **name** of a prepared description preceded by @, e.g. `'@INT'`.
 
+## Priority on conflicts
+
+When two token descriptions can match the same input
+(e.g. the keyword `if` also matches the identifier
+pattern `/[a-z]+/`), the token **declared first in the
+list wins**. You can therefore use the order of
+descriptions to control priority — put more specific
+tokens (such as keywords) before the more general ones
+if you want them to be recognized separately, or rely on
+the first-wins rule to silently resolve overlaps.
+
 ## Usage example
 
 ```python

@@ -318,33 +318,40 @@ class TestGenerateStandard:
         assert dfa[digit_state][''] == ['INT', 'push_mode']
 
 
-# ── generate: inseparable tokens ─────────────────────────
+# ── generate: conflicting tokens (first-declared wins) ──
 
 
-class TestGenerateInseparable:
+class TestGenerateConflicts:
 
-    def test_identical_strings(self):
-        """Two tokens with the exact same string should be inseparable."""
-        with pytest.raises(SyntaxError, match='inseparable'):
-            generate({'m': [
-                ('"A"', ['A']),
-                ('"A"', ['A2'])
-            ]})
+    def test_identical_strings_first_wins(self):
+        """Two tokens with the exact same string: first-declared wins."""
+        result = generate({'m': [
+            ('"A"', ['A']),
+            ('"A"', ['A2'])
+        ]})
+        assert result['m']['1'][''] == ['A']
 
-    def test_identical_multi_char_strings(self):
-        with pytest.raises(SyntaxError, match='inseparable'):
-            generate({'m': [
-                ('"ABC"', ['TOK1']),
-                ('"ABC"', ['TOK2'])
-            ]})
+    def test_identical_multi_char_strings_first_wins(self):
+        result = generate({'m': [
+            ('"ABC"', ['TOK1']),
+            ('"ABC"', ['TOK2'])
+        ]})
+        final_state = result['m']['3']
+        assert final_state[''] == ['TOK1']
 
-    def test_inseparable_regex_full_overlap(self):
-        """Two regex tokens that fully overlap on final states."""
-        with pytest.raises(SyntaxError, match='inseparable'):
-            generate({'m': [
-                ('/[a-z]+/', ['WORD']),
-                ('/if/', ['IF'])
-            ]})
+    def test_regex_full_overlap_first_wins(self):
+        """A regex token that fully overlaps another: first-declared wins."""
+        result = generate({'m': [
+            ('/[a-z]+/', ['WORD']),
+            ('/if/', ['IF'])
+        ]})
+        final_actions = [
+            transitions['']
+            for transitions in result['m'].values()
+            if '' in transitions
+        ]
+        assert final_actions
+        assert all(action == ['WORD'] for action in final_actions)
 
 
 # ── generate: log output ─────────────────────────────────

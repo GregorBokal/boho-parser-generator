@@ -26,6 +26,17 @@ je:
     - **Regularni izraz** znotraj dveh poševnic, npr `'/A[BC]/'`.
     - **Ime** vnaprej pripravljenega opisa, ki sledi zanku @, npr `'@INT'`.
 
+## Prednost pri konfliktih
+
+Kadar lahko dva opisa žetona ujameta isti vhod (npr.
+ključna beseda `if` ustreza tudi vzorcu za identifikator
+`/[a-z]+/`), **zmaga tisti žeton, ki je na seznamu
+deklariran prvi**. Z vrstnim redom opisov lahko tako
+sami določate prednost — bolj specifične žetone (na
+primer ključne besede) postavite pred bolj splošne, če
+želite, da so prepoznani posebej, ali pa se zanesete na
+pravilo »prvi zmaga«, ki prekrivanja samodejno razreši.
+
 ## Primer uporabe
 
 ```python

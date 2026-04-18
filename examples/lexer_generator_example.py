@@ -7,7 +7,11 @@ tokens = {
     ],
     'mode_2': [
         ('@INT', ['INT']),
-        (r'/-?\d*\.\d+/', ['FLOAT', 1, 'mode_2'])
+        (r'/-?\d*\.\d+/', ['FLOAT', 1, 'mode_3'])
+    ],
+    'mode_3': [
+        ('"AB"', ['AB']),
+        (r'/AB+/', ['ABB', 1, 'mode_1'])
     ]
 }
 

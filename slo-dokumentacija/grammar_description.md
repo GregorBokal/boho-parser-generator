@@ -28,6 +28,15 @@ CELO_STEVILO: @INT      // Vnaprej pripravljen opis
 
 Če se ime začne s podčrtajem (npr. `_DOLG_KOMENTAR`), se terminal kljub poimenovanju izreže iz drevesa.
 
+### Prednost pri konfliktih
+
+Kadar neka kombinacija črk ustreza dvema praviloma (npr.
+`"if"` ustreza tudi vzorcu za identifikator
+`/[a-z]+/`), **zmaga tisti terminal, ki je deklariran
+prvi**. Z vrstnim redom terminalov v slovnici torej sami
+določate njihovo prednost — bolj specifične terminale
+(na primer ključne besede) postavite pred bolj splošne.
+
 ## Slovnična pravila
 
 Neterminal opišemo z `neterminal: opis` (ime z malimi črkami). Možnosti ločimo z `|`:

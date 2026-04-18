@@ -27,6 +27,16 @@ INTEGER: @INT            // Built-in description
 
 If the name starts with an underscore (e.g. `_LONG_COMMENT`), the terminal is pruned from the tree despite being named.
 
+### Priority on conflicts
+
+When two terminal descriptions can match the same input
+(e.g. the keyword `"if"` also matches the identifier
+pattern `/[a-z]+/`), the terminal **declared first wins**.
+The order in which terminals appear in the grammar
+therefore controls their priority — place more specific
+terminals (such as keywords) before the more general
+ones.
+
 ## Grammar rules
 
 Nonterminals are described with `nonterminal: description` (lowercase name). Alternatives are separated by `|`:
