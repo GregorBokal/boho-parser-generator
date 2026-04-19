@@ -1,7 +1,10 @@
+import json
+
 import pytest
 
 from boho.boho import Boho
 from boho.grammar_interpreter import interpret
+from boho.grammars import boho_grammar
 from boho.objects import Tree, Token
 
 
@@ -225,6 +228,96 @@ A: "a"
         ''')
         tree = b('a::a##a')
         assert tree.name == 'start'
+
+
+# ── Pre-computed tables: from_tables / load / save ───────
+
+
+class TestFromTables:
+
+    def test_from_tables_produces_working_parser(self):
+        """A Boho built from raw tables should parse just like one
+        built from a grammar string."""
+        source = Boho('start: A\nA: "a"')
+        b = Boho.from_tables(source.lex_table, source.pars_table)
+        tree = b('a')
+        assert isinstance(tree, Tree)
+        assert tree.name == 'start'
+
+    def test_from_tables_skips_grammar_attrs(self):
+        """from_tables does not run the grammar interpreter, so the
+        grammar-related attributes are not populated."""
+        source = Boho('start: A\nA: "a"')
+        b = Boho.from_tables(source.lex_table, source.pars_table)
+        assert not hasattr(b, 'grammar')
+        assert not hasattr(b, 'tokens')
+        assert not hasattr(b, 'ignore_dict')
+
+    def test_from_tables_accepts_boho_grammar(self):
+        """The pre-compiled boho_grammar tables can be loaded directly."""
+        b = Boho.from_tables(*boho_grammar)
+        tree = b('start: A\nA: "a"')
+        assert isinstance(tree, Tree)
+
+
+class TestTablesProperty:
+
+    def test_tables_returns_list_of_two(self):
+        b = Boho('start: A\nA: "a"')
+        tables = b.tables
+        assert isinstance(tables, list)
+        assert len(tables) == 2
+        assert tables[0] is b.lex_table
+        assert tables[1] is b.pars_table
+
+    def test_pars_table_keeps_ignore_entry(self):
+        """After construction the pars_table still carries the ''
+        ignore entry (the Parser only pops it from its own copy)."""
+        b = Boho('''
+start: A+
+A: "a"
+%ignore "::"
+        ''')
+        assert '' in b.pars_table
+        assert '"::"' in b.pars_table['']
+
+
+class TestSaveLoad:
+
+    def test_save_writes_valid_json(self, tmp_path):
+        b = Boho('start: A\nA: "a"')
+        path = tmp_path / 'tables.json'
+        b.save(path)
+        with open(path, encoding='utf-8') as f:
+            data = json.load(f)
+        assert isinstance(data, list)
+        assert len(data) == 2
+
+    def test_load_roundtrip(self, tmp_path):
+        """save() → load() should yield an equivalent parser."""
+        source = Boho('''
+start: sum
+sum: sum "+" INT | INT
+INT: @INT
+%ignore " "
+        ''')
+        path = tmp_path / 'tables.json'
+        source.save(path)
+        b = Boho.load(path)
+        assert b('1 + 2 + 3').name == 'start'
+
+    def test_load_roundtrip_with_ignore(self, tmp_path):
+        """Round-trip must preserve ignore rules (parser and lexer)."""
+        source = Boho('''
+start: A+
+A: "a"
+%ignore " "
+%ignore "::"
+        ''')
+        path = tmp_path / 'tables.json'
+        source.save(path)
+        b = Boho.load(path)
+        assert b('a a::a a').name == 'start'
 
 
 # ── Helpers ──────────────────────────────────────────────

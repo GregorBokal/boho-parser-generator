@@ -182,9 +182,41 @@ Boho is self-hosting -- its own metalanguage is specified in Boho (see `examples
 
 Create a parser from a grammar string. Set `log=True` to print the generated lexer and parser tables.
 
+### `Boho.from_tables(lex_table, pars_table)`
+
+Create a parser from pre-computed lexer and parser tables. Skips the (potentially slow) grammar-to-tables compilation.
+
+### `Boho.load(path)`
+
+Create a parser from a JSON file previously written by `save()`.
+
+### `boho.save(path)`
+
+Write the current `[lex_table, pars_table]` to a JSON file for fast reloading.
+
+### `boho.tables`
+
+A `[lex_table, pars_table]` list — ready to pass back into `from_tables` or serialize yourself.
+
 ### `boho(text, log=False) -> Tree`
 
 Parse input text. Returns a `Tree` with `Token` leaves. Set `log=True` for step-by-step tracing.
+
+#### Caching tables
+
+Grammar compilation can be slow for larger grammars; the lexer/parser tables, on the other hand, load instantly.
+Compile once, persist, reuse:
+
+```python
+from boho import Boho
+
+# First run — compile and cache
+Boho("""...grammar...""").save("tables.json")
+
+# Subsequent runs — skip compilation
+b = Boho.load("tables.json")
+b("some input")
+```
 
 ### `Tree`
 

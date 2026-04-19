@@ -181,11 +181,44 @@ Boho je samogostiteljski -- njegov lastni metajezik je opisan v Bohu samem (glej
 
 ### `Boho(grammar, log=False)`
 
-Ustvari razčlenjevalnik iz niza s slovnico. `log=True` izpiše generirane tabele.
+Ustvari razčlenjevalnik iz niza s slovnico.
+
+### `Boho.from_tables(lex_table, pars_table)`
+
+Ustvari razčlenjevalnik iz že pripravljenih leksičnih in razčlenjevalnih tabel. Preskoči (potencialno počasno)
+prevajanje slovnice v tabele.
+
+### `Boho.load(path)`
+
+Ustvari razčlenjevalnik iz JSON-datoteke, ki je bila predhodno zapisana s `save()`.
+
+### `boho.save(path)`
+
+Zapiše trenutni `[lex_table, pars_table]` v JSON-datoteko za hitro ponovno nalaganje.
+
+### `boho.tables`
+
+Seznam `[lex_table, pars_table]`, pripravljen za vrnitev v `from_tables` ali lastno serializacijo.
 
 ### `boho(text, log=False) -> Tree`
 
 Razčleni vhodni tekst. Vrne `Tree` z listi `Token`. `log=True` za sledenje po korakih.
+
+#### Shranjevanje tabel
+
+Prevajanje slovnice je lahko za večje slovnice počasno, nalaganje že pripravljenih tabel pa je tako rekoč trenutno.
+Slovnico prevedemo enkrat, shranimo in znova uporabimo:
+
+```python
+from boho import Boho
+
+# Prvi zagon — prevedi in shrani
+Boho("""...slovnica...""").save("tabele.json")
+
+# Nadaljnji zagoni — brez prevajanja
+b = Boho.load("tabele.json")
+b("nek vhod")
+```
 
 ### `Tree`
 
