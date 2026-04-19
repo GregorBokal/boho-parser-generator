@@ -2,6 +2,16 @@ from boho.objects import Tree, Token
 from boho.interpreter import Interpreter
 
 
+class TestTreePretty:
+
+    def test_empty_tree_pretty(self):
+        """A Tree with no children renders as just its name."""
+        assert Tree('empty', []).pretty() == 'empty'
+
+    def test_empty_tree_pretty_indented(self):
+        assert Tree('empty', []).pretty(2) == '    empty'
+
+
 class ArithmeticInterpreter(Interpreter):
 
     def start(self, tree: Tree):

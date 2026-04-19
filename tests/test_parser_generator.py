@@ -737,3 +737,55 @@ class TestExampleIntegration:
         captured = capsys.readouterr()
         assert len(captured.out) > 0
         assert isinstance(result, dict)
+
+
+# ── Coverage: first/action edge cases ────────────────────
+
+
+class TestCoverageGaps:
+
+    def test_first_all_epsilon_production(self, generator):
+        """A production whose every symbol is nullable should add ''
+        to the first set of its nonterminal."""
+        grammar = {
+            'start': [('A', 'B')],
+            'A': [()],
+            'B': [()],
+        }
+        generator.grammar = dict(grammar)
+        generator.grammar[START] = [('start',)]
+        generator.compute_first_sets()
+        assert '' in generator.first_cache['start']
+
+    def test_shift_reduce_existing_shift(self):
+        """Shift installed first, then a reduce tries to overwrite —
+        hits the branch where existing is a goto (str) and action is reduce."""
+        gen = LR1ParserGenerator()
+        gen.action('0', 'X', '1')
+        gen.action('0', 'X', (1, 'a'))
+        assert ('0', 'X') in gen.conflicts
+        assert 'Shift-reduce' in gen.conflicts[('0', 'X')]
+        assert gen.table['0']['X'] == '1'
+
+    def test_unknown_conflict_with_bool_existing(self):
+        """If an accept action (bool) already exists at a (state, symbol)
+        and a different action tries to overwrite, conflict is 'Unknown'."""
+        gen = LR1ParserGenerator()
+        gen.action('0', '$', True)
+        gen.action('0', '$', '1')
+        assert ('0', '$') in gen.conflicts
+        assert 'Unknown' in gen.conflicts[('0', '$')]
+
+    def test_reduce_reduce_conflict_logged(self, capsys):
+        """A reduce-reduce conflict should be detected and logged
+        with the 'first action wins' message."""
+        grammar = {
+            'start': [('a',), ('b',)],
+            'a': [('X',)],
+            'b': [('X',)],
+        }
+        gen = LR1ParserGenerator()
+        gen(grammar, log=True)
+        captured = capsys.readouterr()
+        assert any('Reduce-reduce' in msg for msg in gen.conflicts.values())
+        assert 'first action wins' in captured.out

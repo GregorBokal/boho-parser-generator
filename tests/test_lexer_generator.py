@@ -565,3 +565,155 @@ class TestEdgeCases:
         r1 = generate(input_data)
         r2 = generate(input_data)
         assert r1 == r2
+
+
+# ── Coverage: merge edge cases & desc_to_regex ───────────
+
+
+class TestGenerateCoverageGaps:
+
+    def test_int_and_float_merge_terminates(self):
+        """The INT+FLOAT regex merge must produce a finite, valid DFA.
+        Exercises the new-state-creation branch (with the inner usage
+        bookkeeping copy)."""
+        result = generate({'mode_2': [
+            ('@INT', ['INT']),
+            (r'/-?\d*\.\d+/', ['FLOAT', 1, 'mode_2']),
+        ]})
+        dfa = result['mode_2']
+        assert isinstance(dfa, dict)
+        # Exit-able for both INT and FLOAT
+        finals = {tuple(t['']) for t in dfa.values() if '' in t}
+        assert ('INT',) in finals
+        assert ('FLOAT', 1, 'mode_2') in finals
+
+    def test_int_float_merge_log_new_state(self, capsys):
+        """Logging the INT+FLOAT merge should mention creating new
+        states for conflict resolution."""
+        generate({'mode_2': [
+            ('@INT', ['INT']),
+            (r'/-?\d*\.\d+/', ['FLOAT']),
+        ]}, log=True)
+        out = capsys.readouterr().out
+        assert 'create a new state' in out
+
+    def test_log_dictionary_already_resolved(self, capsys):
+        """When the same conflict pair is encountered twice within a
+        merge, the second time it should hit the 'already resolved'
+        log branch."""
+        # Two regex tokens with overlapping prefixes that exercise the
+        # repeated-conflict path.
+        generate({'m': [
+            ('@INT', ['INT']),
+            (r'/-?\d+x/', ['INTX']),
+        ]}, log=True)
+        out = capsys.readouterr().out
+        assert 'already been resolved' in out
+
+    def test_log_translation_reused(self, capsys):
+        """When merging brings the same target state in twice via the
+        translation dictionary, the reuse branch logs differently."""
+        generate({'m': [
+            ('@INT', ['INT']),
+            ('@FLOAT', ['FLOAT']),
+        ]}, log=True)
+        out = capsys.readouterr().out
+        assert 'should be translated' in out
+
+    def test_inseparable_log_when_logging(self, capsys):
+        """Two distinct tokens that fully overlap should print the
+        'inseparable, but … wins' message when logging."""
+        generate({'m': [
+            ('"if"', ['IF']),
+            ('"if"', ['IF2']),
+        ]}, log=True)
+        out = capsys.readouterr().out
+        assert 'inseparable' in out
+        assert 'wins' in out
+
+    def test_desc_to_regex_escapes(self):
+        """A description with backslash-escaped chars (other than '/')
+        should produce a regex with the escape preserved."""
+        from boho.lexer_generator import desc_to_regex
+        assert desc_to_regex(r'\d+') == r'\d+'
+        assert desc_to_regex(r'\/') == '/'
+        assert desc_to_regex(r'\.') == r'\.'
+
+
+# ── Coverage: inseparability error branches ──────────────
+#
+# These tests deliberately register malformed entries in the
+# `standard` dict to force the generator into its defensive
+# error branches. Without this manipulation the corresponding
+# lines are unreachable, since `generate_dfa` and
+# `regex_to_dfa` always produce well-shaped DFAs.
+
+
+class TestInseparabilityErrors:
+
+    def test_terminal_inseparable_from_other_token(self):
+        """A final action sitting on a non-empty char overlaps with a
+        plain transition: hits the new-str/old-list error branch."""
+        from boho.lexer_generator import standard
+        standard['_BAD'] = {'0': {'a': ['BAD_FINAL']}}
+        try:
+            with pytest.raises(SyntaxError, match='inseparable'):
+                generate({'m': [
+                    ('@_BAD', ['I1']),
+                    ('"a"', ['A']),
+                ]})
+        finally:
+            del standard['_BAD']
+
+    def test_terminal_inseparable_inner_list_value(self):
+        """A nested-list value during merge triggers the inner raise of
+        the new-str/old-list error branch."""
+        from boho.lexer_generator import standard
+        standard['_BAD'] = {'0': {'a': ['BAD_FINAL']}}
+        standard['_NESTED'] = {'0': {'a': '1', 'b': [['nested']]}, '1': {}}
+        try:
+            with pytest.raises(SyntaxError, match='inseparable'):
+                generate({'m': [
+                    ('@_BAD', ['I1']),
+                    ('@_NESTED', ['I2']),
+                ]})
+        finally:
+            del standard['_BAD']
+            del standard['_NESTED']
+
+    def test_token_inseparable_via_reachable_final(self):
+        """A final action on the new side overlaps with a transition
+        on the old side that leads to another final: hits the BFS-
+        finds-list raise inside the new-list/old-str branch."""
+        from boho.lexer_generator import standard
+        standard['_BAD'] = {'0': {'a': ['BAD_FINAL']}}
+        try:
+            with pytest.raises(SyntaxError, match='inseparable'):
+                generate({'m': [
+                    ('"a"', ['A']),
+                    ('@_BAD', ['I1']),
+                ]})
+        finally:
+            del standard['_BAD']
+
+    def test_token_inseparable_via_chain_without_final(self):
+        """Same branch as above, but the BFS exhausts without finding a
+        list value: hits the trailing 'inseparable from some other token'
+        raise."""
+        from boho.lexer_generator import standard
+        standard['_BAD'] = {'0': {'a': ['BAD_FINAL']}}
+        standard['_CHAIN'] = {
+            '0': {'a': '1'},
+            '1': {'b': '2'},
+            '2': {'c': '0'},
+            '3': {},
+        }
+        try:
+            with pytest.raises(SyntaxError, match='inseparable'):
+                generate({'m': [
+                    ('@_CHAIN', ['CH']),
+                    ('@_BAD', ['I1']),
+                ]})
+        finally:
+            del standard['_BAD']
+            del standard['_CHAIN']

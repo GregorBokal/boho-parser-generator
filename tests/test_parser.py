@@ -690,3 +690,87 @@ class TestLiteralPrefixes:
         # /re/ literal should be filtered out
         assert len(tree) == 1
         assert tree[0] == Token('NAME', 'x')
+
+
+# ── Coverage: log output, fake terminals, line counting ──
+
+
+class TestParserCoverageGaps:
+
+    def test_log_ignored_terminal(self, capsys):
+        """Logging a token that is ignored should hit the 'can be ignored'
+        log branch."""
+        instructions = {
+            '': ['WS'],
+            '0': {'NAME': '1'},
+            '1': {'$': (1, 'start')},
+            '2': {'$': True},
+        }
+        # Manually arrange state 0 to accept both NAME and ignore WS,
+        # and let state 1 accept end-of-input via reduce.
+        instructions = {
+            '': ['WS'],
+            '0': {'NAME': '1', 'start': '2'},
+            '1': {'$': (1, 'start')},
+            '2': {'$': True},
+        }
+        parser = Parser(instructions)
+        tokens = [Token('WS', ' '), Token('NAME', 'x')]
+        parser(tokens, log=True)
+        captured = capsys.readouterr()
+        assert 'but can be ignored' in captured.out
+
+    def test_log_unexpected_terminal_raises(self, capsys):
+        """An unexpected, non-ignorable terminal should log and raise."""
+        instructions = {
+            '0': {'NAME': '1', 'start': '2'},
+            '1': {'$': (1, 'start')},
+            '2': {'$': True},
+        }
+        parser = Parser(instructions)
+        with pytest.raises(SyntaxError):
+            parser([Token('OTHER', 'z')], log=True)
+        captured = capsys.readouterr()
+        assert "can't be ignored" in captured.out
+
+    def test_fake_terminal_log_and_value(self, capsys):
+        """Reducing into a fake terminal (UPPER_ name) should produce a
+        Token carrying the concatenated child values and log the fact."""
+        instructions = {
+            '0': {'NAME': '1', 'start': '3', 'TAG_': '4'},
+            '1': {'$': (1, 'TAG_')},
+            '3': {'$': True},
+            '4': {'$': (1, 'start')},
+        }
+        parser = Parser(instructions)
+        result = parser([Token('NAME', 'hello')], log=True)
+        assert isinstance(result, Tree)
+        assert result.name == 'start'
+        fake = result[0]
+        assert isinstance(fake, Token)
+        assert fake.name == 'TAG_'
+        assert fake.value == 'hello'
+        captured = capsys.readouterr()
+        assert 'fake terminal' in captured.out
+
+    def test_count_advances_line(self):
+        """count() should reset self.line when a token's line is newer."""
+        instructions = {
+            '0': {'NAME': '1', 'start': '3'},
+            '1': {'NAME': '2', '$': (1, '_rest'), '_rest': '4'},
+            '2': {'$': (1, '_rest'), '_rest': '5'},
+            '3': {'$': True},
+            '4': {'$': (2, 'start')},
+            '5': {'$': (2, '_rest')},
+        }
+        parser = Parser(instructions)
+        try:
+            parser([
+                Token('NAME', 'a', line=0),
+                Token('NAME', 'b', line=2),
+                Token('OTHER', 'oops', line=2),
+            ])
+        except SyntaxError:
+            pass
+        assert parser.lines == 2
+        assert 'b' in parser.line
