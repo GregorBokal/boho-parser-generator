@@ -11,18 +11,17 @@ def match(pattern: str, text: str) -> bool:
 
 def regex_to_dfa(regex: str, action: LexerAction) -> LexerDFA:
     base = parse(regex).to_fsm()
-    error_states = []
-    for state in base.map:
-        if state not in base.finals:
-            values = list(base.map[state].values())
-            first = values.pop(0)
-            for value in values:
-                if value == first:
-                    continue
-                else:
-                    break
-            else:
-                error_states.append(state)
+    # A "dead" state is a non-final sink: every outgoing transition
+    # loops back to itself, so no final state is reachable from it.
+    # Pass-through states (all transitions to the SAME other state)
+    # used to be pruned here too, which incorrectly dropped legitimate
+    # intermediate states like the "\X" branch in '\\.' escapes.
+    error_states = [
+        state for state, transitions in base.map.items()
+        if state not in base.finals
+        and transitions
+        and all(target == state for target in transitions.values())
+    ]
 
     dfa = {}
     for state in base.map:
