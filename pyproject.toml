@@ -1,13 +1,10 @@
 [build-system]
-requires = ["setuptools>=68.0"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools.packages.find]
-include = ["boho*"]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "boho"
-version = "0.2.0"
+version = "0.2.1"
 description = "A self-hosting parser generator with a modal lexer and LR(1) parser"
 readme = "README.md"
 license = "MIT"
@@ -22,3 +19,6 @@ classifiers = [
 
 [project.urls]
 Homepage = "https://github.com/GregorBokal/boho-parser-generator?tab=readme-ov-file"
+
+[tool.hatch.build.targets.wheel]
+packages = ["boho"]

@@ -7,6 +7,26 @@ from .objects import (
 from typing import List
 
 
+def _first_position(symbols):
+    """(line, col) of the first token or spanned tree in symbols."""
+    for sym in symbols:
+        if isinstance(sym, Token):
+            return sym.line, sym.col
+        elif isinstance(sym, Tree) and sym.line is not None:
+            return sym.line, sym.col
+    return None, None  # pragma: no cover -- empty reduce handled upstream
+
+
+def _last_position(symbols):
+    """(end_line, end_col) of the last token or spanned tree in symbols."""
+    for sym in reversed(symbols):
+        if isinstance(sym, Token):
+            return sym.line, sym.col + len(sym.value)
+        elif isinstance(sym, Tree) and sym.end_line is not None:
+            return sym.end_line, sym.end_col
+    return None, None  # pragma: no cover -- empty reduce handled upstream
+
+
 class Parser:
 
     def __init__(
@@ -76,11 +96,14 @@ class Parser:
                 stack.append(action)
 
             else:  # Reduce
-                lenght, name = action
+                length, name = action
                 children = []
 
-                if lenght:
-                    for symbol in stack[-lenght * 2::2]:
+                if length:
+                    symbols = stack[-length * 2::2]
+                    first_line, first_col = _first_position(symbols)
+                    last_line, last_col = _last_position(symbols)
+                    for symbol in symbols:
                         if isinstance(symbol, Token):
                             if symbol.name[0] in auxiliary:
                                 continue
@@ -88,9 +111,14 @@ class Parser:
                             children += symbol.children
                             continue
                         children.append(symbol)
-                    del stack[-lenght * 2:]
+                    del stack[-length * 2:]
+                else:
+                    first_line = first_col = None
+                    last_line = last_col = None
 
-                t = Tree(name, children)
+                t = Tree(name, children,
+                         line=first_line, col=first_col,
+                         end_line=last_line, end_col=last_col)
 
                 if name.endswith('_') and name[-2].isupper():
                     v = t.value
@@ -110,7 +138,7 @@ class Parser:
                         print(f'     It matches with action '
                               f'\033[1;33m{action}\033[0m.')
                         print(f'     So let\'s REDUCE some '
-                              f'({lenght}) symbols and '
+                              f'({length}) symbols and '
                               f'push this tree on the stack:')
                         print(t.pretty(3))
                 stack.append(self.states[stack[-2]][name])

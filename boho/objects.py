@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Dict, Tuple
+from typing import List, Dict, Optional, Tuple
 
 LexerAction = str | List[str | int]
 LexerDFA = Dict[str, List[str] | Dict[str, LexerAction]]
@@ -31,6 +31,10 @@ class Token:
 class Tree:
     name: str
     children: List['Tree | Token']
+    line: Optional[int] = None
+    col: Optional[int] = None
+    end_line: Optional[int] = None
+    end_col: Optional[int] = None
 
     def __iter__(self):
         return iter(self.children)
