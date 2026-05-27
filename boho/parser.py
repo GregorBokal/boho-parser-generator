@@ -43,6 +43,8 @@ class Parser:
         self.line = ''
 
     def __call__(self, tokens: List[Token], log=False):
+        self.lines = 0
+        self.line = ''
 
         tokens.append(Token('$'))
         stack: List[str | Token | Tree] = [self.start]
